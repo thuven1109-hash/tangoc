@@ -1,0 +1,17 @@
+{
+  "name": "Tạ Ngọc",
+  "short_name": "Tạ Thị Ngọc",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF0F5",
+  "theme_color": "#ff99cc",
+  "description": "em định bỏ chị đi lấy chồng thật sao?",
+  "icons": [
+    {
+      "src": "https://lh3.googleusercontent.com/u/0/d/1AiMbjmCJUQyWPsWy1eImfz009oY4WEnf",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
