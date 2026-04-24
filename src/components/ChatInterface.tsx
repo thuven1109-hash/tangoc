@@ -152,6 +152,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setIsInventoryOpen(false);
   };
 
+  const [displayCount, setDisplayCount] = React.useState(50);
+  const displayedMessages = messages.slice(-displayCount);
+  const hasMore = messages.length > displayCount;
+
   return (
     <div className="flex flex-col h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
       {/* Header */}
@@ -224,7 +228,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         className="flex-1 overflow-y-auto pt-24 pb-24 px-4 scroll-smooth"
       >
         <div className="max-w-2xl mx-auto relative">
-          {messages.map((msg) => (
+          {hasMore && (
+            <div className="flex justify-center mb-8">
+              <button
+                onClick={() => setDisplayCount(prev => prev + 50)}
+                className="px-6 py-2 bg-pink-50 dark:bg-gray-800 text-pink-500 rounded-full text-xs font-bold hover:bg-pink-100 dark:hover:bg-gray-700 transition-colors border border-pink-100 dark:border-gray-700"
+              >
+                Hiển thị tin nhắn cũ hơn ({messages.length - displayCount})
+              </button>
+            </div>
+          )}
+
+          {displayedMessages.map((msg) => (
             <div key={msg.id}>
               {editingMessageId === msg.id ? (
                 <div className="flex w-full mb-6 justify-end">
