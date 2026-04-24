@@ -10,6 +10,8 @@ import { ApiKeyModal } from "./components/ApiKeyModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { MusicPlayer, FloatingMusicDisc } from "./components/MusicPlayer";
 
+import { saveToStorage, loadFromStorage } from "./lib/storage";
+
 const STORAGE_KEY = "hoi_uc_nam_ky_sessions";
 const API_KEY_STORAGE = "user_api_key";
 const API_KEYS_LIST_STORAGE = "user_api_keys_list";
@@ -112,22 +114,25 @@ export default function App() {
     }
   };
 
-  // Load sessions from localStorage
+  // Load sessions from storage
   React.useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setSessions(parsed);
-      } catch (e) {
-        console.error("Failed to parse sessions", e);
+    const initStorage = async () => {
+      const saved = await loadFromStorage<ChatSession[]>(STORAGE_KEY);
+      if (saved && Array.isArray(saved)) {
+        setSessions(saved);
       }
-    }
+    };
+    initStorage();
   }, []);
 
-  // Save sessions to localStorage
+  // Save sessions to storage
   React.useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+    if (sessions.length > 0) {
+      saveToStorage(STORAGE_KEY, sessions).catch(err => {
+        console.error("Critical storage failure", err);
+        showToast("Không thể lưu dữ liệu! Vui lòng kiểm tra dung lượng trình duyệt.");
+      });
+    }
   }, [sessions]);
 
   // Save music state to localStorage
@@ -738,6 +743,16 @@ export default function App() {
     }
   };
 
+  const handleImportSessions = (imported: ChatSession[]) => {
+    // Combine sessions without duplicates by ID
+    setSessions((prev) => {
+      const existingIds = new Set(prev.map(s => s.id));
+      const newItems = imported.filter(s => !existingIds.has(s.id));
+      return [...newItems, ...prev];
+    });
+    showToast(`Đã nhập thành công ${imported.length} phiên bản chat`);
+  };
+
   const handleDeleteSession = (id: string) => {
     setSessions(sessions.filter((s) => s.id !== id));
     if (currentSessionId === id) setCurrentSessionId(null);
@@ -812,6 +827,7 @@ export default function App() {
         currentSessionId={currentSessionId || ""}
         onSelectSession={handleSelectSession}
         onDeleteSession={handleDeleteSession}
+        onImportSessions={handleImportSessions}
         onNewChat={() => {
           setCurrentSessionId(null);
           setNotebookEvents([]);
