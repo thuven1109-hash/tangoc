@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Plus, History, Users, Trash2, Settings, BookMarked, UserPlus, Calendar, UserCircle, Heart, Palette, Brain, Pencil, Camera, RotateCcw } from "lucide-react";
+import { X, Plus, History, Users, Trash2, Settings, BookMarked, UserPlus, Calendar, UserCircle, Heart, Palette, Brain, Pencil, Camera, RotateCcw, Download, Upload } from "lucide-react";
 import { ChatSession, SideCharacter, CustomSideCharacter, StorySnapshot } from "../types";
 import { SIDE_CHARACTERS } from "../constants";
 import { cn } from "../lib/utils";
@@ -15,6 +15,7 @@ interface SidebarProps {
   currentSessionId: string;
   onSelectSession: (id: string) => void;
   onDeleteSession: (id: string) => void;
+  onImportSessions: (sessions: ChatSession[]) => void;
   onNewChat: () => void;
   onChangeApiKey: () => void;
   notebookEvents: string[];
@@ -40,6 +41,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentSessionId,
   onSelectSession,
   onDeleteSession,
+  onImportSessions,
   onNewChat,
   onChangeApiKey,
   notebookEvents,
@@ -55,6 +57,50 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onDeleteSnapshot,
 }) => {
   const [isAddingChar, setIsAddingChar] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleExportData = () => {
+    try {
+      const dataStr = JSON.stringify(sessions, null, 2);
+      const dataBlob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `HoiUcNamKy_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export failed", error);
+      alert("Không thể xuất dữ liệu!");
+    }
+  };
+
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const imported = JSON.parse(content);
+        if (Array.isArray(imported)) {
+          if (confirm(`Bạn muốn tải lên ${imported.length} phiên bản chat? Thao tác này sẽ gộp vào dữ liệu hiện có.`)) {
+            onImportSessions(imported);
+          }
+        } else {
+          alert("Tập tin không hợp lệ!");
+        }
+      } catch (err) {
+        console.error("Import failed", err);
+        alert("Lỗi khi đọc tập tin!");
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
   const [newChar, setNewChar] = React.useState<CustomSideCharacter>({
     name: "",
     gender: "Nam",
@@ -593,7 +639,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
 
-            <div className="p-4 border-t border-pink-100 dark:border-gray-800">
+            <div className="p-4 border-t border-pink-100 dark:border-gray-800 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={handleExportData}
+                  className="py-2 px-3 bg-pink-50 dark:bg-gray-800 text-[#ff99cc] rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-pink-100 dark:hover:bg-gray-700 transition-colors"
+                  title="Tải lịch sử về máy"
+                >
+                  <Download className="w-4 h-4" />
+                  Sao lưu
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="py-2 px-3 bg-pink-50 dark:bg-gray-800 text-[#ff99cc] rounded-xl flex items-center justify-center gap-2 text-xs font-bold hover:bg-pink-100 dark:hover:bg-gray-700 transition-colors"
+                  title="Tải lịch sử từ máy lên"
+                >
+                  <Upload className="w-4 h-4" />
+                  Hồi phục
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImportData}
+                  accept=".json"
+                  className="hidden"
+                />
+              </div>
+
               <button
                 onClick={() => {
                   onChangeApiKey();
